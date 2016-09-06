@@ -15,5 +15,8 @@
     "require-dev": {
         "squizlabs/php_codesniffer": "^2.7",
 		"fpdo/fluentpdo": "^1.1"
+    },
+    "autoload": {
+    	"classmap": ["Database.php"]
     }
 }
