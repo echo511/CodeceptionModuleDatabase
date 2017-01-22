@@ -144,7 +144,7 @@ class Database extends DB_MODULE
 
         if ($this->config['native']) {
             $file = Configuration::projectDir() . $sqlDump;
-            $command = 'mysql -h ' . $this->config['host'] . ' -u ' . $this->config['user'] . ' --password=\'' . $this->config['password'] . '\' ' . $this->config['dbname'] . ' < ' . $file;
+            $command = 'mysql -h ' . $this->config['host'] . ' -u ' . $this->config['user'] . ' --password=\'' . $this->config['password'] . '\' --default-character-set=utf8 ' . $this->config['dbname'] . ' < ' . $file;
             Debug::debug($command);
             exec($command);
         } else {
