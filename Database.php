@@ -7,6 +7,7 @@ use Codeception\Exception\ModuleConfigException;
 use Codeception\Exception\ModuleException;
 use Codeception\Module\Db as DB_MODULE;
 use Codeception\TestInterface;
+use Codeception\Util\Debug;
 use FluentPDO;
 use InvalidArgumentException;
 use PDOException;
@@ -35,6 +36,7 @@ class Database extends DB_MODULE
         'migrate' => false,
         'migrations_path' => null,
         'dbname' => null,
+        'native' => false,
     ];
 
     /**
@@ -140,23 +142,30 @@ class Database extends DB_MODULE
             );
         }
 
-        $sql = file_get_contents(Configuration::projectDir() . $sqlDump);
+        if ($this->config['native']) {
+            $file = Configuration::projectDir() . $sqlDump;
+            $command = 'mysql -h ' . $this->config['host'] . ' -u ' . $this->config['user'] . ' --password=\'' . $this->config['password'] . '\' ' . $this->config['dbname'] . ' < ' . $file;
+            Debug::debug($command);
+            exec($command);
+        } else {
+            $sql = file_get_contents(Configuration::projectDir() . $sqlDump);
 
-        // remove C-style comments (except MySQL directives)
-        $sql = preg_replace('%/\*(?!!\d+).*?\*/%s', '', $sql);
+            // remove C-style comments (except MySQL directives)
+            $sql = preg_replace('%/\*(?!!\d+).*?\*/%s', '', $sql);
 
-        if (!empty($sql)) {
-            // split SQL dump into lines
-            $sql = preg_split('/\r\n|\n|\r/', $sql, -1, PREG_SPLIT_NO_EMPTY);
-        }
+            if (!empty($sql)) {
+                // split SQL dump into lines
+                $sql = preg_split('/\r\n|\n|\r/', $sql, -1, PREG_SPLIT_NO_EMPTY);
+            }
 
-        try {
-            $this->driver->load($sql);
-        } catch (PDOException $e) {
-            throw new ModuleException(
-                __CLASS__,
-                $e->getMessage() . "\nSQL query being executed: " . $this->driver->sqlToRun
-            );
+            try {
+                $this->driver->load($sql);
+            } catch (PDOException $e) {
+                throw new ModuleException(
+                    __CLASS__,
+                    $e->getMessage() . "\nSQL query being executed: " . $this->driver->sqlToRun
+                );
+            }
         }
     }
 
@@ -197,14 +206,14 @@ class Database extends DB_MODULE
 
         $config = [
             'paths' => [
-            'migrations' => $migrationsPath,
+                'migrations' => $migrationsPath,
             ],
             'environments' => [
-            'default_database' => 'db',
-            'db' => [
-                'name' => $this->config['dbname'],
-                'connection' => $this->dbh,
-            ]
+                'default_database' => 'db',
+                'db' => [
+                    'name' => $this->config['dbname'],
+                    'connection' => $this->dbh,
+                ]
             ]
         ];
         $commandConfig = new Config($config);
